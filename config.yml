@@ -1,0 +1,26 @@
+# example configuration file for podcastify
+
+# use `secrets: ~` instead to disable the need to pass secrets
+secrets:
+  - secret1
+
+feeds:
+  # /feed/BlenderStudio?secret=secret1
+  # is simply a short alias of
+  # /youtube/feed/channel/UCz75RVbH8q2jdBJ4SnwuZZQ?secret=secret1
+  BlenderStudio:
+    # example using a YouTube channel ID
+    url: https://youtube.com/channel/UCz75RVbH8q2jdBJ4SnwuZZQ
+
+  # /feed/MasyanyaKuvaeva?secret=secret1
+  MasyanyaKuvaeva:
+    # example using a YouTube /c/ custom url
+    url: https://youtube.com/c/MasyanyaKuvaeva
+
+  # /feed/Weebl-Songs?secret=secret1
+  Weebl-Songs:
+    # example using a YouTube playlist
+    url: https://youtube.com/playlist?list=PL4F6FB1A731B89744
+    # override some of the channel attributes
+    overrides:
+      title: Weebl's Songs
