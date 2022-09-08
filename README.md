@@ -1,10 +1,9 @@
 # podcastify
 
 A trivial Flask app that generates video podcast feeds
-for Youtube channels/playlists.
+for Youtube channels/playlists, and probably all other stuff
+[yt-dlp](https://github.com/yt-dlp/yt-dlp) can handle.
 Also enables fetching the videos themselves.
-
-Built upon [yt-dlp](https://github.com/yt-dlp/yt-dlp).
 
 Sounds very similar to [podsync](https://github.com/mxpv/podsync),
 except it doesn't need a YouTube API token.
