@@ -36,7 +36,8 @@ def channel_to_rss(url, video_url_maker, config=None):
     if title.endswith(' - Videos') and not 'title' in overrides:
         title = title[:-len(' - Videos')]
     fg.title(title)
-    fg.description(get_overrideable('description'))
+    fg.description(get_overrideable('description') or
+                   get_overrideable('title'))
     fg.podcast.itunes_author(get_overrideable('uploader'))
     t = (best_thumbnail(info)
          if not 'thumbnail' in overrides else overrides('thumbnail'))
@@ -53,7 +54,7 @@ def channel_to_rss(url, video_url_maker, config=None):
         fe = fg.add_entry()
         fe.id(e['id'])
         fe.title(e['fulltitle'])
-        fe.description(e['description'])
+        fe.description(e['description'] or e['fulltitle'])
         fe.podcast.itunes_duration(e['duration'])
 
         t = best_thumbnail(e)
