@@ -65,6 +65,7 @@
               groups.podcastify = {};
             };
             systemd.services.podcastify = {
+              path = [ pkgs.yt-dlp-light ];  # move to wrapper?
               description = "Podcast generator based on yt-dlp";
               wantedBy = [ "multi-user.target" ];
               after = [ "network.target" ];
@@ -73,10 +74,11 @@
                 ExecStart = lib.escapeShellArgs [
                   "${self.packages.${system}.waitressEnv}/bin/waitress-serve"
                   "--listen" "${cfg.address}:${builtins.toString cfg.port}"
-                  "podcastify:main"
+                  "podcastify.main:app"
                 ];
                 Restart = "on-failure";
                 User = "podcastify";
+                Group = "podcastify";
               };
             };
           };
