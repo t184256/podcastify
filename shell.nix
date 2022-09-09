@@ -1,7 +1,7 @@
 { pkgs ? import <nixpkgs> { } }:
 pkgs.mkShell {
   buildInputs = with pkgs; [
-    yt-dlp
+    yt-dlp-light
     (python3.withPackages (ps: with ps; [
       flask
       feedgen
