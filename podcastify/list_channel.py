@@ -13,6 +13,12 @@ import podcastify.get_mimetype
 
 YOUTUBE_DL_OPTIONS = {
     'playlist_items': '5::-1',  # consider only the latest 5 videos
+    'match_filter': yt_dlp.utils.match_filter_func(
+        '!is_live'
+        ' & live_status != is_upcoming'
+        ' & live_status != is_live'
+        ' & live_status != post_live'
+    ),
 }
 
 def channel_to_rss(url, video_url_maker, config=None):
@@ -48,8 +54,14 @@ def channel_to_rss(url, video_url_maker, config=None):
         if 'duration' not in e:
             print(f"SKIPPING {e['title']}: no duration")
             continue
-        if 'is_live' not in e and e.is_live:
+        # belt and suspenders
+        if 'is_live' in e and e['is_live']:
             print(f"SKIPPING {e['title']}: is_live=True")
+            continue
+        # belt and suspenders
+        if ('live_status' in e
+                and e['live_status'] not in ('was_live', 'not_live')):
+            print(f"SKIPPING {e['title']}: live_status={e['live_status']}")
             continue
         fe = fg.add_entry()
         fe.id(e['id'])
