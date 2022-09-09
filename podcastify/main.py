@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import functools
+import os
 import re
 import subprocess
 import sys
@@ -13,7 +14,8 @@ import podcastify.get_mimetype
 import podcastify.list_channel
 
 
-with open(sys.argv[1]) as cf:
+config_file = os.getenv("PODCASTIFY_CONFIG") or sys.argv[1]
+with open(config_file) as cf:
     config = ruamel.yaml.YAML(typ='safe').load(cf)
 
 
