@@ -12,7 +12,7 @@ import podcastify.get_mimetype
 
 
 YOUTUBE_DL_OPTIONS = {
-    'playlist_items': '10::-1',  # consider only the latest 10 videos
+    'playlist_items': '5::-1',  # consider only the latest 5 videos
 }
 
 def channel_to_rss(url, video_url_maker, config=None):
