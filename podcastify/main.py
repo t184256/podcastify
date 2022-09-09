@@ -74,6 +74,7 @@ def fetch(id_):
     s = subprocess.Popen((
         'yt-dlp',
         '--no-color', '--no-cache-dir', '--no-progress', '--no-playlist',
+        '--live-from-start',
         f'https://youtube.com/watch?v={id_}',
         '-o', '-'), stdout=subprocess.PIPE)
     return flask.send_file(s.stdout,
