@@ -83,8 +83,11 @@ def channel_to_rss(url, video_url_maker, config=None):
             ts = pytz.utc.fromutc(ts)
             fe.pubDate(ts)
 
+        filesize_approx = (str(e['filesize_approx'])
+                           if 'filesize_approx' in e else '7777M')
+
         fe.enclosure(video_url_maker(e['id']),
-                     str(e['filesize_approx']),
+                     filesize_approx,
                      podcastify.get_mimetype.by_ext(e['ext']))
 
     return fg.rss_str(pretty=True)
