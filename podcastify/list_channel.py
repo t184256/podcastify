@@ -77,6 +77,7 @@ def channel_to_rss(feed_config, video_url_maker):
         fe = fg.add_entry()
         fe.id(e['id'])
         fe.title(e['fulltitle'])
+        fe.link({'href': e['original_url']})
         fe.description(e['description'] or e['fulltitle'])
         fe.podcast.itunes_duration(e['duration'])
         if 'chapters' in e and e['chapters']:
