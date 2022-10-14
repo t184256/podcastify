@@ -12,7 +12,6 @@ import podcastify.get_mimetype
 
 
 YOUTUBE_DL_OPTIONS = {
-    'playlist_items': '5::-1',  # consider only the latest 5 videos
     'match_filter': yt_dlp.utils.match_filter_func(
         '!is_live'
         ' & live_status != is_upcoming'

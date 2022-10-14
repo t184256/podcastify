@@ -4,6 +4,9 @@
 secrets:
   - secret1
 
+feed_defaults:
+  max_entries: 5  # consider only the last N videos
+
 feeds:
   # /feed/BlenderStudio?secret=secret1
   # is simply a short alias of
@@ -24,3 +27,4 @@ feeds:
     # override some of the channel attributes
     overrides:
       title: Weebl's Songs
+    max_entries: 10  # optional

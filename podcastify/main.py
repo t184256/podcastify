@@ -17,6 +17,7 @@ import podcastify.list_channel
 config_file = os.getenv("PODCASTIFY_CONFIG") or sys.argv[1]
 with open(config_file) as cf:
     config = ruamel.yaml.YAML(typ='safe').load(cf)
+feed_defaults = config.get('feed_defaults', {})
 
 
 app = flask.Flask(__name__)
@@ -50,11 +51,11 @@ def video_url_maker(id_):
 def feed(feed_name):
     if feed_name not in config['feeds']:
         return f'`{feed_name}` not in config.feeds', 400
-    feed_config = config['feeds'][feed_name]
-    print(feed_config)
-    return podcastify.list_channel.channel_to_rss(feed_config['url'],
-                                                  video_url_maker,
-                                                  config=feed_config)
+    feed_config = {**feed_defaults, **config['feeds'][feed_name]}
+    if 'url' not in feed_config:
+        return f'`url not specified for `{feed_name}`', 500
+    return podcastify.list_channel.channel_to_rss(feed_config,
+                                                  video_url_maker)
 
 
 @app.route('/youtube/feed/channel/<channel_name>')
@@ -63,7 +64,8 @@ def youtube_channel_feed(channel_name):
     if not re.match(r'[\w\-]{4,24}', channel_name):
         return f'`{channel_name}` feels suspicions', 400
     url = f'https://youtube.com/channel/{channel_name}'
-    return podcastify.list_channel.channel_to_rss(url, video_url_maker)
+    return podcastify.list_channel.channel_to_rss({'url': url},
+                                                  video_url_maker)
 
 
 @app.route('/youtube/video/<id_>')
