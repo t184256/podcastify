@@ -10,6 +10,7 @@ import yt_dlp
 import feedgen.feed
 
 import podcastify.get_mimetype
+import podcastify.chapters_extensions
 
 
 YOUTUBE_DL_OPTIONS = {
@@ -19,6 +20,7 @@ YOUTUBE_DL_OPTIONS = {
         ' & live_status != is_live'
     ),
 }
+
 
 def channel_to_rss(feed_config, video_url_maker):
     assert 'url' in feed_config
@@ -39,6 +41,11 @@ def channel_to_rss(feed_config, video_url_maker):
 
     fg = feedgen.feed.FeedGenerator()
     fg.load_extension('podcast')
+    fg.register_extension(
+        'chapters',
+        podcastify.chapters_extensions.SimpleChaptersExtension,
+        podcastify.chapters_extensions.SimpleChaptersEntryExtension
+    )
     fg.id(get_overrideable('channel_url', 'id'))
     fg.link(href=get_overrideable('channel_url', 'link'), rel='self')
     title = get_overrideable('title')
@@ -72,6 +79,9 @@ def channel_to_rss(feed_config, video_url_maker):
         fe.title(e['fulltitle'])
         fe.description(e['description'] or e['fulltitle'])
         fe.podcast.itunes_duration(e['duration'])
+        if 'chapters' in e and e['chapters']:
+            for chapter in e['chapters']:
+                fe.chapters.add(chapter['start_time'], chapter['title'])
 
         t = best_thumbnail(e)
         if t:
