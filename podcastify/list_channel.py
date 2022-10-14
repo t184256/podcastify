@@ -3,6 +3,7 @@
 
 import datetime
 import pytz
+import sys
 import types
 
 import yt_dlp
@@ -16,17 +17,20 @@ YOUTUBE_DL_OPTIONS = {
         '!is_live'
         ' & live_status != is_upcoming'
         ' & live_status != is_live'
-        ' & live_status != post_live'
     ),
 }
 
-def channel_to_rss(url, video_url_maker, config=None):
-    print(config)
-    overrides = (config['overrides']
-                 if config is not None and 'overrides' in config else {})
-    print(overrides)
-    with yt_dlp.YoutubeDL(YOUTUBE_DL_OPTIONS) as ydl:
-        info = ydl.extract_info(url, download=False)
+def channel_to_rss(feed_config, video_url_maker):
+    assert 'url' in feed_config
+    overrides = (feed_config['overrides']
+                 if feed_config and 'overrides' in feed_config else {})
+    yt_dl_options = {
+        **YOUTUBE_DL_OPTIONS,
+        **feed_config.get('extra_yt_dl_options', {}),
+        'playlist_items': f'{feed_config.get("max_entries", 5)}::-1'
+    }
+    with yt_dlp.YoutubeDL(yt_dl_options) as ydl:
+        info = ydl.extract_info(feed_config['url'], download=False)
         info = ydl.sanitize_info(info)
 
     def get_overrideable(info_name, overrideable_name=None):
@@ -51,17 +55,18 @@ def channel_to_rss(url, video_url_maker, config=None):
 
     for e in info['entries']:
         if 'duration' not in e:
-            print(f"SKIPPING {e['title']}: no duration")
+            print(f"SKIPPING {e['title']}: no duration", file=sys.stderr)
             continue
-        # belt and suspenders
         if 'is_live' in e and e['is_live']:
-            print(f"SKIPPING {e['title']}: is_live=True")
+            print(f"SKIPPING {e['title']}: is_live=True", file=sys.stderr)
             continue
-        # belt and suspenders
-        if ('live_status' in e
-                and e['live_status'] not in ('was_live', 'not_live')):
-            print(f"SKIPPING {e['title']}: live_status={e['live_status']}")
+        LIVE_STATUSES = ('was_live', 'not_live', 'post_live')
+        live_status = e.get('live_status')
+        if live_status and live_status not in LIVE_STATUSES:
+            print(f"SKIPPING {e['title']}: live_status={e['live_status']}",
+                  file=sys.stderr)
             continue
+        print(f'* {e["fulltitle"]} [{live_status}]', file=sys.stderr)
         fe = fg.add_entry()
         fe.id(e['id'])
         fe.title(e['fulltitle'])
@@ -85,9 +90,9 @@ def channel_to_rss(url, video_url_maker, config=None):
         filesize_approx = (str(e['filesize_approx'])
                            if 'filesize_approx' in e else '7777M')
 
-        fe.enclosure(video_url_maker(e['id']),
-                     filesize_approx,
-                     podcastify.get_mimetype.by_ext(e['ext']))
+        mime = (podcastify.get_mimetype.by_ext(e['ext']) if 'ext' in e else
+                podcastify.get_mimetype.by_id(e['id']))
+        fe.enclosure(video_url_maker(e['id']), filesize_approx, mime)
 
     return fg.rss_str(pretty=True)
 
