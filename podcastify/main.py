@@ -18,6 +18,8 @@ config_file = os.getenv("PODCASTIFY_CONFIG") or sys.argv[1]
 with open(config_file) as cf:
     config = ruamel.yaml.YAML(typ='safe').load(cf)
 feed_defaults = config.get('feed_defaults', {})
+yt_dlp_extra_args = (config['yt-dlp'].get('extra_arguments', [])
+                     if 'yt-dlp' in config else [])
 
 
 app = flask.Flask(__name__)
@@ -76,7 +78,7 @@ def fetch(id_):
     s = subprocess.Popen((
         'yt-dlp',
         '--no-color', '--no-cache-dir', '--no-progress', '--no-playlist',
-        '--live-from-start',
+        *yt_dlp_extra_args,
         f'https://youtube.com/watch?v={id_}',
         '-o', '-'), stdout=subprocess.PIPE)
     return flask.send_file(s.stdout,
