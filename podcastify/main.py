@@ -74,7 +74,7 @@ def youtube_channel_feed(channel_name):
 @secret_required
 def fetch(id_):
     if not re.match(r'[\w\-]{10,12}', id_):
-        return f'`{id_}` feels suspicions', 400
+        return f'`{id_}` feels suspicious', 400
     s = subprocess.Popen((
         'yt-dlp',
         '--no-color', '--no-cache-dir', '--no-progress', '--no-playlist',
