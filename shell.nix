@@ -7,6 +7,7 @@ pkgs.mkShell {
       feedgen
       cachetools
       ruamel-yaml
+      requests
     ]))
   ];
   nativeBuildInputs = with pkgs.python3Packages; [

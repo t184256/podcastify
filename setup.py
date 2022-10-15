@@ -13,7 +13,13 @@ setup(
     packages=[
         'podcastify',
     ],
-    install_requires=['flask', 'feedgen', 'ruamel-yaml', 'cachetools'],
+    install_requires=[
+        'flask',
+        'feedgen',
+        'ruamel-yaml',
+        'cachetools',
+        'requests',
+    ],
     #scripts=['podcastify/__main__.py'],
     entry_points={
         'console_scripts': [

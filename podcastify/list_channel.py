@@ -9,8 +9,9 @@ import types
 import yt_dlp
 import feedgen.feed
 
-import podcastify.get_mimetype
 import podcastify.chapters_extensions
+import podcastify.get_mimetype
+import podcastify.sponsorblock
 
 
 YOUTUBE_DL_OPTIONS = {
@@ -78,7 +79,12 @@ def channel_to_rss(feed_config, video_url_maker):
         fe.id(e['id'])
         fe.title(e['fulltitle'])
         fe.link({'href': e['original_url']})
-        fe.description(e['description'] or e['fulltitle'])
+        description = e['description'] or e['fulltitle']
+        sb = podcastify.sponsorblock.query(e['id'])
+        if sb is not None:
+            sb_pretty = podcastify.sponsorblock.pretty(sb)
+            description = sb_pretty + '\n' + description
+        fe.description(description)
         fe.podcast.itunes_duration(e['duration'])
         if 'chapters' in e and e['chapters']:
             for chapter in e['chapters']:
