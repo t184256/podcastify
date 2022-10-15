@@ -73,6 +73,7 @@
               serviceConfig = {
                 ExecStart = lib.escapeShellArgs [
                   "${self.packages.${system}.waitressEnv}/bin/waitress-serve"
+                  "--threads" "16"
                   "--listen" "${cfg.address}:${builtins.toString cfg.port}"
                   "podcastify.main:app"
                 ];
