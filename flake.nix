@@ -13,7 +13,7 @@
           version = "0.0.1";
           src = ./.;
           propagatedBuildInputs = with pkgs.python3Packages; [
-            flask yt-dlp-light feedgen ruamel-yaml
+            flask yt-dlp-light feedgen ruamel-yaml cachetools
           ];
           doCheck = false;
         };

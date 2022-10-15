@@ -5,6 +5,7 @@ pkgs.mkShell {
     (python3.withPackages (ps: with ps; [
       flask
       feedgen
+      cachetools
       ruamel-yaml
     ]))
   ];
