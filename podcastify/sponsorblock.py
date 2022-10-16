@@ -34,12 +34,13 @@ def query(video_id):
         for je in j:
             if je['videoID'] == video_id:
                 r = je
-        assert 'segments' in r
-        for s in r['segments']:
-            assert 'actionType' in s
-            assert 'category' in s
-            assert 'segment' in s
-            assert len(s['segment']) == 2
+        if r is not None:
+            assert 'segments' in r
+            for s in r['segments']:
+                assert 'actionType' in s
+                assert 'category' in s
+                assert 'segment' in s
+                assert len(s['segment']) == 2
     except Exception as e:
         print(f'sponsorblock error: {e}', file=sys.stderr)
     return r
