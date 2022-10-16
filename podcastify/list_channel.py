@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: 2022 Alexander Sosedkin <monk@unboiled.info>
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import concurrent.futures
+import itertools
 import datetime
 import pytz
 import sys
@@ -14,31 +16,50 @@ import podcastify.get_mimetype
 import podcastify.sponsorblock
 
 
-YOUTUBE_DL_OPTIONS = {
-    'match_filter': yt_dlp.utils.match_filter_func(
-        '!is_live'
-        ' & live_status != is_upcoming'
-        ' & live_status != is_live'
-    ),
-}
+YOUTUBE_DL_OPTIONS = {}
+THREADS = 4
+
+
+def _parallel_query(url, max_entries=None, yt_dl_options={}, straight=False):
+    with yt_dlp.YoutubeDL(yt_dl_options) as ydl:
+        bare_info = ydl.extract_info(url, download=False, process=False)
+    if not straight:
+        entries = list(itertools.islice(bare_info['entries'], max_entries))
+    else:
+        entries = list(bare_info['entries'])
+        entries = entries[:-max_entries:-1]
+
+    def _query_single_video(e):
+        with yt_dlp.YoutubeDL(yt_dl_options) as ydl:
+            ei = ydl.sanitize_info(ydl.extract_info(e['url'], download=False))
+        ei['sponsorblock'] = podcastify.sponsorblock.query(e['id'])
+        return ei
+    with concurrent.futures.ThreadPoolExecutor(max_workers=THREADS) as ex:
+        eis = ex.map(_query_single_video, entries)
+    entry_infos = list(eis)
+
+    with yt_dlp.YoutubeDL({**yt_dl_options, 'playlist_items': '0:0'}) as ydl:
+        feed_info = ydl.sanitize_info(ydl.extract_info(url, download=False))
+
+    return feed_info, entry_infos
 
 
 def channel_to_rss(feed_config, video_url_maker):
     assert 'url' in feed_config
     overrides = (feed_config['overrides']
                  if feed_config and 'overrides' in feed_config else {})
+    straight = feed_config.get('order', 'reverse') == 'straight'
     yt_dl_options = {
         **YOUTUBE_DL_OPTIONS,
         **feed_config.get('extra_yt_dl_options', {}),
-        'playlist_items': f'{feed_config.get("max_entries", 5)}::-1'
     }
-    with yt_dlp.YoutubeDL(yt_dl_options) as ydl:
-        info = ydl.extract_info(feed_config['url'], download=False)
-        info = ydl.sanitize_info(info)
+    feed_info, entry_infos = _parallel_query(feed_config['url'],
+                                             feed_config.get('max_entries', 5),
+                                             yt_dl_options, straight=straight)
 
-    def get_overrideable(info_name, overrideable_name=None):
-        overrideable_name = overrideable_name or info_name
-        return overrides.get(overrideable_name) or info[info_name]
+    def get_overrideable(feed_info_name, overrideable_name=None):
+        overrideable_name = overrideable_name or feed_info_name
+        return overrides.get(overrideable_name) or feed_info[feed_info_name]
 
     fg = feedgen.feed.FeedGenerator()
     fg.load_extension('podcast')
@@ -56,12 +77,12 @@ def channel_to_rss(feed_config, video_url_maker):
     fg.description(get_overrideable('description') or
                    get_overrideable('title'))
     fg.podcast.itunes_author(get_overrideable('uploader'))
-    t = (best_thumbnail(info)
+    t = (best_thumbnail(feed_info)
          if not 'thumbnail' in overrides else overrides('thumbnail'))
     if t:
         fg.logo(t)
 
-    for e in info['entries']:
+    for e in entry_infos:
         if 'duration' not in e:
             print(f"SKIPPING {e['title']}: no duration", file=sys.stderr)
             continue
@@ -80,9 +101,8 @@ def channel_to_rss(feed_config, video_url_maker):
         fe.title(e['fulltitle'])
         fe.link({'href': e['original_url']})
         description = e['description'] or e['fulltitle']
-        sb = podcastify.sponsorblock.query(e['id'])
-        if sb is not None:
-            sb_pretty = podcastify.sponsorblock.pretty(sb)
+        if e['sponsorblock'] is not None:
+            sb_pretty = podcastify.sponsorblock.pretty(e['sponsorblock'])
             description = sb_pretty + '\n' + description
         fe.description(description)
         fe.podcast.itunes_duration(e['duration'])
@@ -107,8 +127,7 @@ def channel_to_rss(feed_config, video_url_maker):
         filesize_approx = (str(e['filesize_approx'])
                            if 'filesize_approx' in e else '7777M')
 
-        mime = (podcastify.get_mimetype.by_ext(e['ext']) if 'ext' in e else
-                podcastify.get_mimetype.by_id(e['id']))
+        mime = podcastify.get_mimetype.by_ext(e['ext'])
         fe.enclosure(video_url_maker(e['id']), filesize_approx, mime)
 
     return fg.rss_str(pretty=True)
