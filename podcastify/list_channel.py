@@ -30,13 +30,18 @@ def _parallel_query(url, max_entries=None, yt_dl_options={}, straight=False):
         entries = entries[:-max_entries:-1]
 
     def _query_single_video(e):
-        with yt_dlp.YoutubeDL(yt_dl_options) as ydl:
-            ei = ydl.sanitize_info(ydl.extract_info(e['url'], download=False))
+        try:
+            with yt_dlp.YoutubeDL(yt_dl_options) as ydl:
+                ei = ydl.extract_info(e['url'], download=False)
+                ei = ydl.sanitize_info(ei)
+        except yt_dlp.utils.DownloadError as ex:
+            print(f'failed to download e["id"]: {ex}', file=sys.stderr)
+            return None
         ei['sponsorblock'] = podcastify.sponsorblock.query(e['id'])
         return ei
     with concurrent.futures.ThreadPoolExecutor(max_workers=THREADS) as ex:
         eis = ex.map(_query_single_video, entries)
-    entry_infos = list(eis)
+    entry_infos = [ei for ei in eis if ei is not None]
 
     with yt_dlp.YoutubeDL({**yt_dl_options, 'playlist_items': '0:0'}) as ydl:
         feed_info = ydl.sanitize_info(ydl.extract_info(url, download=False))
